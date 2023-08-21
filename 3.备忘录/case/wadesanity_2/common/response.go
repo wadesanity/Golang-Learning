@@ -1,8 +1,8 @@
-package router
+package common
 
-type responseError struct {
+type ResponseError struct {
 	Status int   `json:"status"`
-	Error  error `json:"error"`
+	Error  string `json:"error"`
 }
 
 /*
@@ -27,14 +27,14 @@ type responseError struct {
   "error": ""
 }
 */
-type responseOk struct {
+
+type ResponseOk struct {
 	Status int    `json:"status"`
-	Data   data   `json:"data"`
+	Data   Data   `json:"data"`
 	Msg    string `json:"msg"`
 }
 
-type data struct {
+type Data struct {
 	Item  []map[string]interface{} `json:"item"`
-	Total int    `json:"total"`
+	Total int                      `json:"total"`
 }
-
