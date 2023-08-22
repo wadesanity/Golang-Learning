@@ -1,0 +1,70 @@
+definitions:
+  common.Data:
+    properties:
+      item:
+        items:
+          additionalProperties: true
+          type: object
+        type: array
+      total:
+        type: integer
+    type: object
+  common.ResponseError:
+    properties:
+      error:
+        type: string
+      status:
+        type: integer
+    type: object
+  common.ResponseOk:
+    properties:
+      data:
+        $ref: '#/definitions/common.Data'
+      msg:
+        type: string
+      status:
+        type: integer
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+paths:
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: register by username and userpwd
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/common.ResponseOk'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.ResponseError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/common.ResponseError'
+      summary: register an account
+      tags:
+      - accounts
+swagger: "2.0"

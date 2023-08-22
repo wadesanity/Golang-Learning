@@ -10,6 +10,20 @@ import (
 	"todolistGo/case/wadesanity_2/service"
 )
 
+
+
+// ShowAccount godoc
+// @Summary      register an account
+// @Description  register by username and userpwd
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Account ID"
+// @Success      200  {object}  common.ResponseOk
+// @Failure      400  {object}  common.ResponseError
+// @Failure      404  {object}  common.ResponseError
+// @Failure      500  {object}  common.ResponseError
+// @Router       /user/register [post]
 func userRegister(c *gin.Context) {
 	userName:=c.PostForm("userName")
 	userPwd:=c.PostForm("userPwd")
