@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"videoGo/case/wadesanity_4/pkg/util"
+	"videoGo/case/wadesanity_4/router"
+)
+
 
 func main() {
-	fmt.Println("HelloWorld")
+	e:=router.SetupRouter()
+	err := e.Run()
+	if err != nil {
+		util.Logger.Fatalf("gin run error:%v",err)
+		return
+	}
 }
