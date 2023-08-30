@@ -11,7 +11,11 @@ type VideoCreateReq struct {
 }
 
 type VideoListReq struct {
-	UserID uint //作者id
+	Title       *string `form:"title" json:"title"` //题目
+	Order       *string `json:"order" form:"order"`
+	CreateStart *int64  `json:"createStart" form:"createStart"`
+	CreateEnd   *int64  `json:"createEnd" form:"createEnd"`
+
 	Offset *int `form:"offset" binding:"required" json:"offset"`
 	Limit  int  `json:"limit" form:"limit" binding:"required"`
 

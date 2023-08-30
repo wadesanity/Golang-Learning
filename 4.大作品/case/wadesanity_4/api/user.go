@@ -10,7 +10,6 @@ import (
 	typesReq "videoGo/case/wadesanity_4/types/req"
 	typesRes "videoGo/case/wadesanity_4/types/res"
 
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -128,12 +127,12 @@ func UserChangePwd(c *gin.Context) {
 	})
 }
 
-func UserShowInfo(c *gin.Context){
+func UserShowInfo(c *gin.Context) {
 	userService := service.GetUserServiceInstance()
 	user, err := userService.ShowInfo(c.Request.Context(), c.GetUint("userID"))
-	if err != nil{
+	if err != nil {
 		var eApiError *e.ApiError
-		if errors.As(err, &eApiError){
+		if errors.As(err, &eApiError) {
 			c.JSON(eApiError.HttpStatus, eApiError.Error())
 			return
 		}
@@ -147,7 +146,7 @@ func UserShowInfo(c *gin.Context){
 	})
 }
 
-func UserChangeAvatar(c *gin.Context){
+func UserChangeAvatar(c *gin.Context) {
 	var req typesReq.UserChangeAvatarReq
 	err := c.ShouldBindWith(&req, binding.Form)
 	if err != nil {
@@ -159,9 +158,9 @@ func UserChangeAvatar(c *gin.Context){
 	userService := service.GetUserServiceInstance()
 	req.ID = c.GetUint("userID")
 	user, err := userService.ChangeAvatar(c.Request.Context(), &req)
-	if err != nil{
+	if err != nil {
 		var eApiError *e.ApiError
-		if errors.As(err, &eApiError){
+		if errors.As(err, &eApiError) {
 			c.JSON(eApiError.HttpStatus, eApiError.Error())
 			return
 		}
@@ -173,4 +172,25 @@ func UserChangeAvatar(c *gin.Context){
 		Msg:    "用户头像信息修改成功",
 		Data:   *user,
 	})
+}
+
+func UserList(c *gin.Context) {
+	var req typesReq.UserListReq
+	err := c.ShouldBind(&req)
+	if err != nil {
+		util.Logger.Errorf("UserList shouldBind err:%v", err)
+		c.JSON(http.StatusBadRequest, typesRes.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		return
+	}
+	util.Logger.Debugf("req:%#v, %+v", req, req)
+	s := service.GetUserServiceInstance()
+	res, total, err := s.List(c.Request.Context(), &req)
+	util.Logger.Debugf("1res:%#v, %v", res, res == nil)
+	if err != nil {
+		var apiError *e.ApiError
+		errors.As(err, &apiError)
+		c.JSON(apiError.HttpStatus, typesRes.NewResError(apiError.HttpStatus, apiError))
+		return
+	}
+	c.JSON(http.StatusOK, typesRes.NewResList(res, total, "用户列表查询成功"))
 }

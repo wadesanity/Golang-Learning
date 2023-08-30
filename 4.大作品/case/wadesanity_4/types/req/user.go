@@ -22,3 +22,12 @@ type UserChangeAvatarReq struct {
 	Avatar string `form:"avatar" binding:"required,min=5,max=16" json:"avatar"`
 }
 
+type UserListReq struct {
+	Name        *string `json:"name" form:"name"`
+	CreateStart *int64  `json:"createStart" form:"createStart"`
+	CreateEnd   *int64  `json:"createEnd" form:"createEnd"`
+	Order       *string `json:"order" form:"order"`
+
+	Offset *int `form:"offset" binding:"required" json:"offset"`
+	Limit  int  `json:"limit" form:"limit" binding:"required"`
+}

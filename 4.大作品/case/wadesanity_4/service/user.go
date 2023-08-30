@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
 	"videoGo/case/wadesanity_4/pkg/e"
 	"videoGo/case/wadesanity_4/pkg/util"
+	"videoGo/case/wadesanity_4/repository/db"
 	"videoGo/case/wadesanity_4/repository/db/dao"
 	"videoGo/case/wadesanity_4/repository/db/model"
 	types "videoGo/case/wadesanity_4/types/req"
@@ -26,6 +28,7 @@ type UserService interface {
 	ChangePwd(context.Context, *types.UserChangePwdReq) (*time.Time, error)
 	ShowInfo(context.Context, uint) (*model.User, error)
 	ChangeAvatar(context.Context, *types.UserChangeAvatarReq) (*model.User, error)
+	List(ctx context.Context, req *types.UserListReq) (any, int64, error)
 }
 
 func GetUserServiceInstance() UserService {
@@ -156,4 +159,47 @@ func (*userService) ChangeAvatar(ctx context.Context, req *types.UserChangeAvata
 		return nil, e.NewApiError(http.StatusInternalServerError, e.DbUpdateError.Error())
 	}
 	return userNew, nil
+}
+
+func (*userService) List(ctx context.Context, req *types.UserListReq) (any, int64, error) {
+	db1 := db.NewDBClient(ctx).Model(&model.User{})
+	if req.Name != nil {
+		db1 = db1.Where("name like ?", fmt.Sprintf("%%%s%%", *req.Name))
+	}
+	if req.CreateStart != nil {
+		db1 = db1.Where("created_at >= ?", time.Unix(*req.CreateStart, 0))
+	}
+	if req.CreateEnd != nil {
+		db1 = db1.Where("created_at <= ?", time.Unix(*req.CreateEnd, 0))
+	}
+	var total int64
+	var res []*model.User
+	err := db1.Count(&total).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			util.Logger.Debugf("user list total req:%#v, not found", req)
+			return nil, total, nil
+		}
+		util.Logger.Errorf("user list total err:%v", err)
+		return nil, total, e.NewApiError(http.StatusInternalServerError, e.DbQueryError.Error())
+	}
+	util.Logger.Debugf("res:%#v, %v", res, res == nil)
+	if total == 0 {
+		return nil, total, nil
+	}
+
+	order := "created_at ASC"
+	if req.Order != nil {
+		order = *req.Order
+	}
+	err = db1.Order(order).Offset(*req.Offset).Limit(req.Limit).Find(&res).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			util.Logger.Debugf("user list req:%#v, not found", req)
+			return nil, total, nil
+		}
+		util.Logger.Errorf("user list err:%v", err)
+		return nil, total, e.NewApiError(http.StatusInternalServerError, e.DbQueryError.Error())
+	}
+	return res, total, nil
 }

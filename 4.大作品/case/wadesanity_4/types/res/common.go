@@ -1,6 +1,9 @@
 package types
 
-import "net/http"
+import (
+	"net/http"
+	"videoGo/case/wadesanity_4/pkg/util"
+)
 
 type Response struct {
 	Status int    `json:"status"`
@@ -15,6 +18,11 @@ type DataList struct {
 }
 
 func NewResList(dataList any, total int64, msg string) *Response {
+	util.Logger.Debugf("dataList is %#v, %v", dataList, dataList == nil)
+	if dataList == nil {
+		util.Logger.Debugf("dataList is nil")
+		dataList = []int{}
+	}
 	return &Response{
 		Status: http.StatusOK,
 		Data: DataList{

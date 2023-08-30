@@ -98,6 +98,7 @@ func SetupRouter() *gin.Engine {
 			authorized.POST("/user/changePwd", api.UserChangePwd)
 			authorized.GET("/user/showInfo", api.UserShowInfo)
 			authorized.POST("/user/changeAvatar", api.UserChangeAvatar)
+			authorized.GET("/user/list", api.UserList)
 
 			authorized.POST("/video/createOne", api.VideoCreateOne)
 			authorized.GET("/video/list", api.VideoList)

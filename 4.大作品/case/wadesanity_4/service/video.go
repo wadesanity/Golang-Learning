@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 	"videoGo/case/wadesanity_4/pkg/e"
 	"videoGo/case/wadesanity_4/pkg/util"
 	"videoGo/case/wadesanity_4/repository/cache"
@@ -64,10 +67,21 @@ func (*videoService) CreateOne(ctx context.Context, req *typesReq.VideoCreateReq
 
 func (*videoService) List(ctx context.Context, req *typesReq.VideoListReq) (res any, total int64, err error) {
 	db1 := db.NewDBClient(ctx).Model(&model.Video{}).
-		Where(&model.Video{UserID: req.UserID, Status: 1})
-	//Where(&model.Video{UserID: req.UserID})
-	db2 := db1.Count(&total)
-	err = db2.Error
+		Where(&model.Video{Status: 1})
+
+	if req.Title != nil {
+		db1 = db1.Where("title like ?", fmt.Sprintf("%%%s%%", *req.Title))
+	}
+
+	if req.CreateStart != nil {
+		db1 = db1.Where("createdTime > ?", time.Unix(*req.CreateStart, 0))
+	}
+
+	if req.CreateEnd != nil {
+		db1 = db1.Where("createdTime <= ?", time.Unix(*req.CreateEnd, 0))
+	}
+
+	err = db1.Count(&total).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			util.Logger.Errorf("视频列表展示方法->not found,请求形参:%#v,", req)
@@ -81,8 +95,13 @@ func (*videoService) List(ctx context.Context, req *typesReq.VideoListReq) (res 
 		return
 	}
 	var videos []*typesRes.VideoListRes
-	err = db1.Order("createdTime desc").
-		Offset(*req.Offset).
+	if req.Order != nil {
+		orderList := strings.Split(*req.Order, ",")
+		for _, order := range orderList {
+			db1 = db1.Order(order)
+		}
+	}
+	err = db1.Offset(*req.Offset).
 		Limit(req.Limit).
 		Find(&videos).Error
 	if err != nil {
