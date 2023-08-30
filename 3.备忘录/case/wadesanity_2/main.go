@@ -11,7 +11,6 @@ import (
 // @contact.name   API Support
 // @contact.url    http://www.swagger.io/support
 // @contact.email  support@swagger.io
-
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 func main() {
@@ -24,12 +23,12 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/v2"
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
-	e:=router.SetupRouter()
+	e := router.SetupRouter()
 
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	err := e.Run()
 	if err != nil {
-		logger.Logger.Fatalf("gin run error:%v",err)
-		return 
+		logger.Logger.Fatalf("gin run error:%v", err)
+		return
 	}
 }
