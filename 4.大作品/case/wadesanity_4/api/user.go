@@ -2,17 +2,20 @@ package api
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"net/http"
-	apiReqType "videoGo/case/wadesanity_4/api/reqtype"
-	apiResType "videoGo/case/wadesanity_4/api/restype"
 	"videoGo/case/wadesanity_4/pkg/e"
 	"videoGo/case/wadesanity_4/pkg/util"
 	"videoGo/case/wadesanity_4/service"
+	typesReq "videoGo/case/wadesanity_4/types/req"
+	typesRes "videoGo/case/wadesanity_4/types/res"
+
+
+	"github.com/gin-gonic/gin"
 )
 
 func UserRegister(c *gin.Context) {
-	var userRegisterReq apiReqType.UserRegisterReq
+	var userRegisterReq typesReq.UserRegisterReq
 	err := c.ShouldBind(&userRegisterReq)
 	if err != nil {
 		util.Logger.Errorf("用户注册handler参数绑定错误:%v", err)
@@ -41,7 +44,7 @@ func UserRegister(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, apiResType.UserRegisterRes{
+	c.JSON(http.StatusOK, typesRes.UserRegisterRes{
 		Status: http.StatusOK,
 		Msg:    "注册用户成功",
 		Data:   *user,
@@ -49,7 +52,7 @@ func UserRegister(c *gin.Context) {
 }
 
 func UserLogin(c *gin.Context) {
-	var userLoginReq apiReqType.UserLoginReq
+	var userLoginReq typesReq.UserLoginReq
 	err := c.ShouldBind(&userLoginReq)
 	if err != nil {
 		util.Logger.Errorf("用户登录handler参数绑定错误:%v", err)
@@ -78,7 +81,7 @@ func UserLogin(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, apiResType.UserLoginRes{
+	c.JSON(http.StatusOK, typesRes.UserLoginRes{
 		Status: http.StatusOK,
 		Msg:    "用户登录成功",
 		Token:  s,
@@ -87,26 +90,7 @@ func UserLogin(c *gin.Context) {
 }
 
 func UserChangePwd(c *gin.Context) {
-	userIDAny, ok := c.Get("userID")
-	if !ok {
-		util.Logger.Errorf("用户修改密码handle,token获取id错误")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": http.StatusBadRequest,
-			"error":  e.AuthorizeError.Error(),
-		})
-		return
-	}
-	userID, ok := userIDAny.(uint)
-	if !ok {
-		util.Logger.Errorf("用户修改密码handle,token解析id类型错误")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": http.StatusBadRequest,
-			"error":  e.AuthorizeError.Error(),
-		})
-		return
-	}
-
-	var req apiReqType.UserChangePwdReq
+	var req typesReq.UserChangePwdReq
 	err := c.ShouldBind(&req)
 	if err != nil {
 		util.Logger.Errorf("用户修改密码handler参数绑定错误:%v", err)
@@ -119,7 +103,7 @@ func UserChangePwd(c *gin.Context) {
 
 	util.Logger.Debugf("UserChangePwdReq:%v", req)
 	userService := service.GetUserServiceInstance()
-	req.ID = userID
+	req.ID = c.GetUint("userID")
 	t, err := userService.ChangePwd(c.Request.Context(), &req)
 	if err != nil {
 		var eApiError *e.ApiError
@@ -137,9 +121,56 @@ func UserChangePwd(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, apiResType.UserChangePwdRes{
+	c.JSON(http.StatusOK, typesRes.UserChangePwdRes{
 		Status:   http.StatusOK,
 		Msg:      "修改密码成功",
 		UpdateAt: *t,
+	})
+}
+
+func UserShowInfo(c *gin.Context){
+	userService := service.GetUserServiceInstance()
+	user, err := userService.ShowInfo(c.Request.Context(), c.GetUint("userID"))
+	if err != nil{
+		var eApiError *e.ApiError
+		if errors.As(err, &eApiError){
+			c.JSON(eApiError.HttpStatus, eApiError.Error())
+			return
+		}
+		c.JSON(http.StatusInternalServerError, e.UnknowError.Error())
+		return
+	}
+	c.JSON(http.StatusOK, typesRes.UserRegisterRes{
+		Status: http.StatusOK,
+		Msg:    "用户信息查询成功",
+		Data:   *user,
+	})
+}
+
+func UserChangeAvatar(c *gin.Context){
+	var req typesReq.UserChangeAvatarReq
+	err := c.ShouldBindWith(&req, binding.Form)
+	if err != nil {
+		util.Logger.Errorf("用户修改头像handler参数绑定错误:%v", err)
+		c.JSON(http.StatusBadRequest, e.ReqParamsError.Error())
+		return
+	}
+
+	userService := service.GetUserServiceInstance()
+	req.ID = c.GetUint("userID")
+	user, err := userService.ChangeAvatar(c.Request.Context(), &req)
+	if err != nil{
+		var eApiError *e.ApiError
+		if errors.As(err, &eApiError){
+			c.JSON(eApiError.HttpStatus, eApiError.Error())
+			return
+		}
+		c.JSON(http.StatusInternalServerError, e.UnknowError.Error())
+		return
+	}
+	c.JSON(http.StatusOK, typesRes.UserRegisterRes{
+		Status: http.StatusOK,
+		Msg:    "用户头像信息修改成功",
+		Data:   *user,
 	})
 }
