@@ -2,10 +2,10 @@ package service
 
 import (
 	"sync"
-	"todolistGo/case/wadesanity_2/common"
-	"todolistGo/case/wadesanity_2/dao"
-	"todolistGo/case/wadesanity_2/logger"
-	"todolistGo/case/wadesanity_2/model"
+	"todolistGo/common"
+	"todolistGo/dao"
+	"todolistGo/logger"
+	"todolistGo/model"
 )
 
 var (

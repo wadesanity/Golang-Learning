@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"todolistGo/case/wadesanity_2/common"
-	"todolistGo/case/wadesanity_2/dao"
-	"todolistGo/case/wadesanity_2/logger"
-	"todolistGo/case/wadesanity_2/model"
-	"todolistGo/case/wadesanity_2/service"
+	"todolistGo/common"
+	"todolistGo/dao"
+	"todolistGo/logger"
+	"todolistGo/model"
+	"todolistGo/service"
 )
 
 func taskGet(c *gin.Context) {
@@ -168,7 +168,7 @@ func taskPut(c *gin.Context) {
 	}
 
 	ids, ok := c.GetPostForm("ids")
-	if !ok{
+	if !ok {
 		logger.Logger.Errorf("task ids invalid")
 		c.JSON(http.StatusBadRequest, common.ResponseError{
 			Status: http.StatusBadRequest,
@@ -176,9 +176,9 @@ func taskPut(c *gin.Context) {
 		})
 		return
 	}
-	idStringList := strings.Split(ids,",")
+	idStringList := strings.Split(ids, ",")
 	idList := make([]uint, len(idStringList))
-	for i_,idString := range idStringList{
+	for i_, idString := range idStringList {
 		idUint, err := strconv.Atoi(idString)
 		if err != nil {
 			logger.Logger.Errorf("task ids invalid")
@@ -223,7 +223,7 @@ func taskPut(c *gin.Context) {
 		})
 		return
 	}
-	res, err := i.PutTaskNew(idList,task)
+	res, err := i.PutTaskNew(idList, task)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, common.ResponseError{
 			Status: http.StatusInternalServerError,
@@ -265,7 +265,7 @@ func taskDelete(c *gin.Context) {
 	}
 
 	ids, ok := c.GetPostForm("ids")
-	if !ok{
+	if !ok {
 		logger.Logger.Errorf("task ids invalid")
 		c.JSON(http.StatusBadRequest, common.ResponseError{
 			Status: http.StatusBadRequest,
@@ -273,9 +273,9 @@ func taskDelete(c *gin.Context) {
 		})
 		return
 	}
-	idStringList := strings.Split(ids,",")
+	idStringList := strings.Split(ids, ",")
 	idList := make([]uint, len(idStringList))
-	for i_,idString := range idStringList{
+	for i_, idString := range idStringList {
 		idUint, err := strconv.Atoi(idString)
 		if err != nil {
 			logger.Logger.Errorf("task ids invalid")

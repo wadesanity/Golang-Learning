@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"sync"
-	"todolistGo/case/wadesanity_2/db"
-	"todolistGo/case/wadesanity_2/model"
+	"todolistGo/db"
+	"todolistGo/model"
 )
 
 var (
@@ -71,12 +71,12 @@ func (taskDAO) AddNew(task *model.Task) error {
 	return nil
 }
 
-func (taskDAO) PutStatus(taskIDList []uint, status uint) (success int64, err error){
-	db1:= db.Db.Model(&model.Task{}).Debug()
+func (taskDAO) PutStatus(taskIDList []uint, status uint) (success int64, err error) {
+	db1 := db.Db.Model(&model.Task{}).Debug()
 	db1 = db1.Where("id IN ?", taskIDList)
 	//db1 = db1.UpdateColumn("status", status)
 	db1 = db1.Updates(model.Task{
-		Status:    &status,
+		Status: &status,
 		//UpdatedAt: time.Time{},
 	})
 
@@ -84,15 +84,15 @@ func (taskDAO) PutStatus(taskIDList []uint, status uint) (success int64, err err
 }
 
 func (taskDAO) PutStatusNew(taskIDList []uint, task model.Task) (success int64, err error) {
-	db1:= db.Db.Model(&model.Task{}).Debug()
+	db1 := db.Db.Model(&model.Task{}).Debug()
 	db1 = db1.Where("id IN ?", taskIDList)
 	//db1 = db1.UpdateColumn("status", status)
 	db1 = db1.Updates(task)
 	return db1.RowsAffected, db1.Error
 }
 
-func (taskDAO) Delete(taskIDList []uint) (success int64, err error){
-	db1:= db.Db.Debug()
+func (taskDAO) Delete(taskIDList []uint) (success int64, err error) {
+	db1 := db.Db.Debug()
 	db1 = db1.Where("id IN ?", taskIDList)
 	//db1 = db1.UpdateColumn("status", status)
 	db1 = db1.Delete(&model.Task{})
@@ -112,7 +112,6 @@ func WithTaskStatus(status uint) Option {
 		return db.Where("status = ?", status)
 	}
 }
-
 
 func WithOrTaskTitle(title string) Option {
 	return func(db *gorm.DB) *gorm.DB {

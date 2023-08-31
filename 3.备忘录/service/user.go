@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 	"sync"
-	"todolistGo/case/wadesanity_2/common"
-	"todolistGo/case/wadesanity_2/dao"
+	"todolistGo/common"
+	"todolistGo/dao"
 )
 
 var (
@@ -16,8 +16,8 @@ type userService struct {
 }
 
 func (*userService) Register(userName, userPwd string) (*common.ResponseOk, error) {
-	i:=dao.GetUserDAO()
-	user, err := i.AddNew(userName,userPwd)
+	i := dao.GetUserDAO()
+	user, err := i.AddNew(userName, userPwd)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (*userService) Login(userName, userPwd string) (*common.ResponseOk, error) 
 	if user == nil {
 		return nil, fmt.Errorf("用户不存在:%s, %w", userName, common.UserNotExistsError)
 	}
-	if user.UserPwd != dao.Md5sumPwd(userPwd){
+	if user.UserPwd != dao.Md5sumPwd(userPwd) {
 		return nil, common.UserLoginParamsError
 	}
 

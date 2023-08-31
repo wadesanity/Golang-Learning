@@ -4,7 +4,7 @@ import (
 	"gopkg.in/ini.v1"
 	"os"
 	"path/filepath"
-	"todolistGo/case/wadesanity_2/logger"
+	"todolistGo/logger"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	abs, err := filepath.Abs("./case/wadesanity_2/conf/conf.ini")
+	abs, err := filepath.Abs("./conf.ini")
 	if err != nil {
 		logger.Logger.Errorf("Fail to get filepath: %v", err)
 		return

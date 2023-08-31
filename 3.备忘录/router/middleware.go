@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
-	"todolistGo/case/wadesanity_2/common"
-	"todolistGo/case/wadesanity_2/logger"
+	"todolistGo/common"
+	"todolistGo/logger"
 )
 
 func jwtMiddleware() gin.HandlerFunc {

@@ -10,9 +10,9 @@ import (
 	"os"
 	"strings"
 	"time"
-	"todolistGo/case/wadesanity_2/conf"
-	"todolistGo/case/wadesanity_2/logger"
-	"todolistGo/case/wadesanity_2/model"
+	"todolistGo/conf"
+	"todolistGo/logger"
+	"todolistGo/model"
 )
 
 var Db *gorm.DB

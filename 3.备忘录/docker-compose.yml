@@ -1,0 +1,38 @@
+networks:
+  case:
+    driver: bridge
+    name: case
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=case
+      - MYSQL_USER=case
+      - MYSQL_PASSWORD=case
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./config/sql:/docker-entrypoint-initdb.d/
+      - case-mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - case
+  case:
+    container_name: case
+    image: wadesanity/case:latest
+    restart: always
+    environment:
+      - GIN_MODE=release
+    ports:
+      - "8080:8080"
+    networks:
+      - case
+
+
+volumes:
+  case-mysql-data:
+    name: case-mysql-data

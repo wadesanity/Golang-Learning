@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"sync"
-	"todolistGo/case/wadesanity_2/common"
-	"todolistGo/case/wadesanity_2/db"
-	"todolistGo/case/wadesanity_2/logger"
-	"todolistGo/case/wadesanity_2/model"
+	"todolistGo/common"
+	"todolistGo/db"
+	"todolistGo/logger"
+	"todolistGo/model"
 )
 
 var (
