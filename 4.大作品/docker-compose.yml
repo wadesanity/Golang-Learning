@@ -1,0 +1,47 @@
+networks:
+  video:
+    driver: bridge
+    name: video
+
+services:
+  mysql:
+    container_name: mysql-video
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=video
+      - MYSQL_USER=video
+      - MYSQL_PASSWORD=video
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./config/sql:/docker-entrypoint-initdb.d/
+      - video-mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - video
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - video
+  video:
+    container_name: video
+    image: wadesanity/video:latest
+    restart: always
+    environment:
+      - GIN_MODE=release
+    ports:
+      - "8080:8080"
+    networks:
+      - video
+
+
+
+volumes:
+  video-mysql-data:
+    name: video-mysql-data
