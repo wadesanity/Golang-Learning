@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "micro-user/grpc/pb/user";
+
+package user;
+
+service UserService {
+  rpc Register(RegisterReq) returns (RegisterRes) {}
+  rpc Login(LoginReq) returns (LoginRes) {}
+  rpc ChangePwd(ChangePwdReq) returns (ChangePwdRes) {}
+  rpc ShowInfo(ShowInfoReq) returns (ShowInfoRes) {}
+  rpc ChangeAvatar(ChangeAvatarReq) returns (ChangeAvatarRes) {}
+  rpc List(ListReq) returns (ListRes) {}
+}
+
+message RegisterReq {
+  string name = 1;
+  string pwd = 2;
+  string avatar = 3;
+}
+
+message LoginReq {
+  string name = 1;
+  string pwd = 2;
+}
+
+message ChangePwdReq {
+  uint32 id = 1;
+  string pwd_old = 2;
+  string pwd_new = 3;
+}
+
+message ShowInfoReq {
+  uint32 id = 1;
+}
+
+message ChangeAvatarReq {
+  uint32 id = 1;
+  string Avatar = 2;
+}
+
+message ListReq {
+  string name = 1;
+  google.protobuf.Timestamp createStart = 2;
+  google.protobuf.Timestamp createEnd = 3;
+  string order = 4;
+  uint32 offset = 5;
+  uint32 limit = 6;
+}
+
+message RegisterRes {
+  bool res = 1;
+}
+
+message LoginRes {
+  string token = 1;
+}
+
+message ChangePwdRes {
+  bool res = 1;
+}
+
+message ShowInfoRes {
+  uint32 id = 1;
+  string name = 2;
+  string avatar = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  enum Role {
+    ordinary = 0;
+    auditor = 1;
+  }
+  Role role = 6;
+  enum Status {
+    is_default = 0;
+    is_black = 1;
+  }
+  Status status = 7;
+}
+
+message ChangeAvatarRes {
+  bool res = 1;
+}
+
+message ListRes {
+  uint64 total = 1;
+  repeated ShowInfoRes list = 2;
+}
+
