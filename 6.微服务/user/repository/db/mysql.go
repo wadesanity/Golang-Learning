@@ -36,6 +36,10 @@ func Init() {
 	switch strings.ToLower(conf.MysqlLogLevel) {
 	case "info":
 		logLevel = logger.Info
+	case "warn":
+		logLevel = logger.Warn
+	case "error":
+		logLevel = logger.Error
 	default:
 		logLevel = logger.Silent
 	}
@@ -64,9 +68,7 @@ func Init() {
 		},
 	})
 	if err != nil {
-		util.Logger.Fatalf("数据库连接失败:%v", err)
-		//panic(any(err))
-		return
+		panic(fmt.Errorf("数据库连接失败:%w", err))
 	}
 	_db = db
 	migration()

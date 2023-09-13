@@ -1,0 +1,63 @@
+definitions:
+  res.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      msg:
+        type: string
+      status:
+        type: integer
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+paths:
+  /user_register:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Register by name and pwd
+      parameters:
+      - description: username
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: pwd
+        in: formData
+        name: pwd
+        required: true
+        type: string
+      - description: avatar
+        in: formData
+        name: avatar
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/res.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/res.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/res.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/res.Response'
+      summary: Register an account
+      tags:
+      - users
+swagger: "2.0"

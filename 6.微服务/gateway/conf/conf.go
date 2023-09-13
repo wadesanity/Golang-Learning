@@ -1,41 +1,50 @@
 package conf
 
 import (
-	"gateway/pkg/util"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
-	"os"
 	"path/filepath"
 )
 
 var (
-	MysqlUser       string
-	MysqlPwd        string
-	MysqlRemoteIp   string
-	MysqlRemotePort string
-	MysqlDataBase   string
-	MysqlLogLevel   string
-	RedisPwd        string
-	RedisRemoteIp   string
-	RedisRemotePort int
-	RedisDataBase   int
-	UserServerAddr  string
+	MysqlUser                        string
+	MysqlPwd                         string
+	MysqlRemoteIp                    string
+	MysqlRemotePort                  string
+	MysqlDataBase                    string
+	MysqlLogLevel                    string
+	RedisPwd                         string
+	RedisRemoteIp                    string
+	RedisRemotePort                  int
+	RedisDataBase                    int
+	UserServerAddr                   string
+	LogLevel                         logrus.Level
+	EtcdAddr                         string
+	UserServerNamespace              string
+	UserServerTimeoutSecond          int
+	UserServerMaxConcurrentRequests  int
+	UserServerRequestVolumeThreshold int
+	UserServerSleepWindowSecond      int
+	UserServerErrorPercentThreshold  int
+	RpcAllTimeout                    int
 )
 
 func init() {
-	abs, err := filepath.Abs("./conf.ini")
+	abs, err := filepath.Abs("./conf/conf.ini")
 	if err != nil {
-		util.Logger.Errorf("Fail to get filepath: %v", err)
-		return
+		panic(fmt.Errorf("fail to get filepath: %w", err))
 	}
 	cfg, err := ini.Load(abs)
 	if err != nil {
-		util.Logger.Errorf("Fail to read file: %v", err)
-		os.Exit(1)
+		panic(fmt.Errorf("fail to read file: %w", err))
 	}
 	//loadMysql(cfg)
 	//loadRedis(cfg)
 	loadUser(cfg)
-
+	loadLog(cfg)
+	loadEtcd(cfg)
+	loadRpc(cfg)
 }
 
 func loadMysql(cfg *ini.File) {
@@ -59,4 +68,26 @@ func loadRedis(cfg *ini.File) {
 func loadUser(cfg *ini.File) {
 	userSection := cfg.Section("user")
 	UserServerAddr = userSection.Key("server_addr").String()
+	UserServerNamespace = userSection.Key("namespace").String()
+	UserServerTimeoutSecond = userSection.Key("server_addr").MustInt(1)
+	UserServerMaxConcurrentRequests = userSection.Key("max_concurrent_requests").MustInt(100)
+	UserServerRequestVolumeThreshold = userSection.Key("request_volume_threshold").MustInt(10)
+	UserServerSleepWindowSecond = userSection.Key("sleep_window_second").MustInt(5)
+	UserServerErrorPercentThreshold = userSection.Key("error_percent_threshold").MustInt(50)
+
+}
+
+func loadLog(cfg *ini.File) {
+	logSection := cfg.Section("log")
+	LogLevel = logrus.Level(logSection.Key("log_level").MustInt(5))
+}
+
+func loadEtcd(cfg *ini.File) {
+	etcdSection := cfg.Section("etcd")
+	EtcdAddr = etcdSection.Key("addr").MustString("http://etcd:2379")
+}
+
+func loadRpc(cfg *ini.File) {
+	rpcSection := cfg.Section("rpc")
+	RpcAllTimeout = rpcSection.Key("addr").MustInt(5)
 }

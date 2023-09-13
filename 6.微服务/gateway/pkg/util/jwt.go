@@ -19,7 +19,7 @@ type MyClaims struct {
 func NewJwt(userID uint32, isAuditor bool) string {
 	//t := jwt.NewWithClaims(jwt.SigningMethodHS256,
 	//	jwt.MapClaims{
-	//		"iss": "my-auth-server-video",
+	//		"iss": "my-auth-serve-video",
 	//		"sub": "userLogin",
 	//		"foo": 2,
 	//		"exp": jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),

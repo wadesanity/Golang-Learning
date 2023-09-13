@@ -2,12 +2,12 @@ package router
 
 import (
 	"errors"
-	"fmt"
 	"gateway/pkg/e"
 	"gateway/pkg/util"
 	"gateway/types/res"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -24,26 +24,41 @@ func jwtMiddleware() gin.HandlerFunc {
 		}, jwt.WithValidMethods(util.AlgList))
 		if token.Valid {
 			if claims, ok := token.Claims.(*util.MyClaims); ok {
-				util.Logger.Debugf("claims.UserID:%v", claims.UserID)
+				util.Logger.WithFields(logrus.Fields{
+					"trace_id": c.Request.Context().Value(util.TraceIdKey),
+					"user_id":  claims.UserID,
+				}).Debugln("jwt check UserID.")
 				c.Set("userID", uint(claims.UserID))
 				c.Next()
 			} else {
-				util.Logger.Errorf("token myclaims pase get error, token:%v", token)
+				util.Logger.WithFields(logrus.Fields{
+					"token": token,
+				}).Errorln("token myClaims parse get error.")
 				c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError))
 				c.Abort()
 				return
 			}
 		} else {
 			if errors.Is(err, jwt.ErrTokenMalformed) {
-				fmt.Println("That's not even a token")
+				util.Logger.WithFields(logrus.Fields{
+					"token":  token,
+					"detail": err,
+				}).Errorln("tokenInvalid: That's not even a token.")
 			} else if errors.Is(err, jwt.ErrTokenSignatureInvalid) {
-				// Invalid signature
-				fmt.Println("Invalid signature")
+				util.Logger.WithFields(logrus.Fields{
+					"token":  token,
+					"detail": err,
+				}).Errorln("tokenInvalid: Invalid signature.")
 			} else if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet) {
-				// Token is either expired or not active yet
-				fmt.Println("Timing is everything")
+				util.Logger.WithFields(logrus.Fields{
+					"token":  token,
+					"detail": err,
+				}).Errorln("tokenInvalid: Timing is everything.")
 			} else {
-				fmt.Println("Couldn't handle this token:", err)
+				util.Logger.WithFields(logrus.Fields{
+					"token":  token,
+					"detail": err,
+				}).Errorln("tokenInvalid: Couldn't handle this token.")
 			}
 			c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError))
 			c.Abort()

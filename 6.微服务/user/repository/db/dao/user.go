@@ -78,13 +78,3 @@ func WhereID(id uint32) Option {
 		return db.Where("id = ?", id)
 	}
 }
-
-type fieldStringOrSlice interface {
-	string | []string
-}
-
-func SelectField[F fieldStringOrSlice](f F) Option {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Select(f)
-	}
-}

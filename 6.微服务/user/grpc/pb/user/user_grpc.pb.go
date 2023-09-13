@@ -92,7 +92,7 @@ func (c *userServiceClient) List(ctx context.Context, in *ListReq, opts ...grpc.
 	return out, nil
 }
 
-// UserServiceServer is the server API for UserService service.
+// UserServiceServer is the serve API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
 type UserServiceServer interface {

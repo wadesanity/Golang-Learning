@@ -9,8 +9,7 @@ RUN go mod download && go mod verify
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags="-w -s" -o ./main
 RUN mkdir -p /app/publish  \
-    && cp main /app/publish  \
-    && cp -r conf.ini /app/publish
+    && cp main /app/publish
 
 FROM busybox
 

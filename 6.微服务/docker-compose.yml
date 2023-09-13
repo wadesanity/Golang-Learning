@@ -1,24 +1,22 @@
 networks:
   micro:
     driver: bridge
-    name: micro-test1
+    name: micro-case
 
 services:
   mysql:
-    container_name: micro-mysql
+    container_name: micro-case-mysql
     image: mysql:8.0
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=user
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=user
+      - MYSQL_DATABASE=micro-case
+      - MYSQL_USER=micro-case
+      - MYSQL_PASSWORD=micro-case
       - TZ=Asia/Shanghai
     volumes:
       - ./config/sql:/docker-entrypoint-initdb.d/
-      - micro-mysql-data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+      - micro:/var/lib/mysql
     networks:
       - micro
 #  redis:
@@ -29,18 +27,53 @@ services:
 #      - "6379:6379"
 #    networks:
 #      - micro-user
-  user:
-    container_name: micro-user
-    image: wadesanity/micro-user:latest
-    restart: always
+  etcd:
+    image: "quay.io/coreos/etcd:latest"
+    container_name: etcd
+    restart: on-failure
+    privileged: true
+    ports:
+      - "2379:2379"
     environment:
-      - GIN_MODE=release
-#    ports:
-#      - "8081:8080"
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_API=3
+#      - ETCD_CERT_FILE="/path/to/serve.crt"
+#      - ETCD_KEY_FILE="/path/to/serve.key"
+#      - ETCD_AUTH="simple"
+#      - ETCD_AUTH_USER="micro-case"
+#      - ETCD_AUTH_PASSWORD="micro-case"
     networks:
       - micro
+  etcd-keeper:
+    image: "evildecay/etcdkeeper:latest"
+    container_name: etcd-keeper
+    restart: on-failure
+#    environment:
+#      - ETCD_HOSTS=http://etcd:2379
+#      - SW_STORAGE_ETCD_CLUSTER_NODES=etcd:2379
+#      - HOST=127.0.0.1
+#      - HOSTNAME=etcd-keeper
+    depends_on:
+      - etcd
+    ports:
+      - "8081:8080"
+    networks:
+      - micro
+  user:
+    container_name: micro-case-user
+    image: wadesanity/micro-user:latest
+    restart: always
+    networks:
+      - micro
+    volumes:
+      - ./conf/user:/app/conf
+      - ./log/user:/app/log
+    depends_on:
+      - mysql
   gateway:
-    container_name: micro-gateway
+    container_name: micro-case-gateway
     image: wadesanity/micro-gateway:latest
     restart: always
     environment:
@@ -49,7 +82,11 @@ services:
       - "8080:8080"
     networks:
       - micro
+    volumes:
+      - ./conf/gateway:/app/conf
+      - ./log/gateway:/app/log
+
 
 volumes:
-  micro-mysql-data:
-    name: micro-mysql-data
+  micro:
+    name: micro-case-mysql-data

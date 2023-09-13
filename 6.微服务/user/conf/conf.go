@@ -1,40 +1,45 @@
 package conf
 
 import (
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
-	"os"
 	"path/filepath"
-	"user/pkg/util"
 )
 
 var (
-	MysqlUser       string
-	MysqlPwd        string
-	MysqlRemoteIp   string
-	MysqlRemotePort string
-	MysqlDataBase   string
-	MysqlLogLevel   string
-	RedisPwd        string
-	RedisRemoteIp   string
-	RedisRemotePort int
-	RedisDataBase   int
-	UserServerAddr  string
+	MysqlUser              string
+	MysqlPwd               string
+	MysqlRemoteIp          string
+	MysqlRemotePort        string
+	MysqlDataBase          string
+	MysqlLogLevel          string
+	RedisPwd               string
+	RedisRemoteIp          string
+	RedisRemotePort        int
+	RedisDataBase          int
+	UserServerAddr         string
+	UserListenAddr         string
+	UserVisitAddr          string
+	LogLevel               logrus.Level
+	EtcdAddr               string
+	UserTimeoutMillisecond int
 )
 
 func init() {
-	abs, err := filepath.Abs("./conf.ini")
+	abs, err := filepath.Abs("./conf/conf.ini")
 	if err != nil {
-		util.Logger.Errorf("Fail to get filepath: %v", err)
-		return
+		panic(fmt.Errorf("fail to get filepath: %w", err))
 	}
 	cfg, err := ini.Load(abs)
 	if err != nil {
-		util.Logger.Errorf("Fail to read file: %v", err)
-		os.Exit(1)
+		panic(fmt.Errorf("fail to read file: %w", err))
 	}
 	loadMysql(cfg)
 	//loadRedis(cfg)
 	loadUser(cfg)
+	loadLog(cfg)
+	loadEtcd(cfg)
 
 }
 
@@ -59,4 +64,18 @@ func loadRedis(cfg *ini.File) {
 func loadUser(cfg *ini.File) {
 	userSection := cfg.Section("user")
 	UserServerAddr = userSection.Key("server_addr").String()
+	UserListenAddr = userSection.Key("listen_addr").MustString(":8080")
+	UserVisitAddr = userSection.Key("visit_addr").MustString("user:8080")
+	UserTimeoutMillisecond = userSection.Key("timeout_millisecond").MustInt(5000)
+
+}
+
+func loadLog(cfg *ini.File) {
+	logSection := cfg.Section("log")
+	LogLevel = logrus.Level(logSection.Key("log_level").MustInt(5))
+}
+
+func loadEtcd(cfg *ini.File) {
+	etcdSection := cfg.Section("etcd")
+	EtcdAddr = etcdSection.Key("addr").MustString("http://etcd:2379")
 }

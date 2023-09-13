@@ -26,6 +26,11 @@ var (
 
 	RepeatActionError = errors.New("重复操作")
 
-	GrpcDialError = errors.New("grpc连接错误")
-	GrpcResError  = errors.New("grpc响应错误")
+	GrpcNotAvailableError = errors.New("grpc不可用")
+	GrpcDialError         = errors.New("grpc连接错误")
+	GrpcResError          = errors.New("grpc响应错误")
+	GrpcResTimeoutError   = errors.New("grpc响应超时")
+	GrpcReqCancelError    = errors.New("grpc请求取消")
+	GrpcReqToManyError    = errors.New("grpc请求过多")
+	GrpcCircuitOpenError  = errors.New("grpc熔断开启")
 )

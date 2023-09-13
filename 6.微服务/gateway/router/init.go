@@ -7,7 +7,9 @@ import (
 
 func InitRouter(engine *gin.Engine) {
 	engine.Use(cors())
-	v1 := engine.Group("/api/v1")
+	v1 := engine.Group("/api/v1",
+		traceIdMiddleware(),
+	)
 	{
 		v1.POST("/user_register", api.UserRegister)
 		v1.POST("/user_login", api.UserLogin)
@@ -18,6 +20,5 @@ func InitRouter(engine *gin.Engine) {
 			authorized.POST("/user_changeAvatar", api.UserChangeAvatar)
 			authorized.GET("/user_list", api.UserList)
 		}
-
 	}
 }

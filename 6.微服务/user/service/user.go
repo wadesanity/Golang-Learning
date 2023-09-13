@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
+	"time"
+	"user/conf"
 	pb "user/grpc/pb/user"
 	"user/pkg/e"
 	"user/pkg/util"
@@ -22,13 +25,22 @@ type UserService struct {
 
 func (*UserService) Register(ctx context.Context, req *pb.RegisterReq) (*pb.RegisterRes, error) {
 	userDao := dao.NewUserDAO(ctx)
-	b, err := userDao.GetTotalByOpts(dao.WithNameInUser(req.Name))
+	_, err := userDao.GetByOpts(dao.WithNameInUser(req.Name))
 	if err != nil {
-		util.Logger.Errorf("用户注册方法->用户存在方法->error:%v,请求形参:%v", err, req.Name)
-		return nil, status.Error(codes.Internal, e.DbQueryError.Error())
-	}
-	if b > 0 {
-		util.Logger.Errorf("用户注册方法->用户存在方法->already found,请求参数:%v", req.Name)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"req":      req,
+				"detail":   err,
+			}).Errorln("userDao.GetByOpts error.")
+			return nil, status.Error(codes.Internal, e.DbQueryError.Error())
+		}
+	} else {
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      req,
+			"detail":   err,
+		}).Debugln("userDao.GetTotalByOpts AlreadyExists.")
 		return nil, status.Error(codes.AlreadyExists, e.DbQueryAlreadyFound.Error())
 	}
 	var user = &model.User{}
@@ -37,7 +49,11 @@ func (*UserService) Register(ctx context.Context, req *pb.RegisterReq) (*pb.Regi
 	user.Md5sumPwd(req.Pwd)
 	user, err = userDao.AddNew(user)
 	if err != nil {
-		util.Logger.Errorf("用户注册方法->用户添加方法错误:%v,请求形参:%#v,", err, user)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      user,
+			"detail":   err,
+		}).Errorln("userDao.AddNew error.")
 		return nil, status.Error(codes.Internal, e.DbCreateError.Error())
 	}
 	return &pb.RegisterRes{Res: true}, nil
@@ -48,10 +64,19 @@ func (*UserService) Login(ctx context.Context, req *pb.LoginReq) (*pb.LoginRes, 
 	user, err := userDao.GetByOpts(dao.WithNameInUser(req.Name))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"req":      user,
+				"detail":   err,
+			}).Warningln("userDao.GetByOpts not found.")
 			util.Logger.Errorf("用户登录方法->用户查询方法->not found,请求形参:%v", req.Name)
-			return nil, status.Error(codes.AlreadyExists, e.DbQueryNotFound.Error())
+			return nil, status.Error(codes.NotFound, e.DbQueryNotFound.Error())
 		}
-		util.Logger.Errorf("用户登录方法->用户查询方法->error:%v,请求形参:%v", err, req.Name)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      user,
+			"detail":   err,
+		}).Errorln("userDao.GetByOpts error.")
 		return nil, status.Error(codes.Internal, e.DbQueryError.Error())
 	}
 	if !user.CheckPwd(req.Pwd) {
@@ -76,15 +101,25 @@ func (*UserService) ChangePwd(ctx context.Context, req *pb.ChangePwdReq) (*pb.Ch
 	user, err := userDao.GetByOpts(dao.WhereID(req.Id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			util.Logger.Errorf("用户修改密码方法->用户查询方法->not found,用户id:%v", req.Id)
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"user_id":  req.Id,
+				"detail":   err,
+			}).Warningln("userDao.GetByOpts not found.")
 			return nil, status.Error(codes.AlreadyExists, e.DbQueryNotFound.Error())
 		}
-		util.Logger.Errorf("用户修改密码方法->用户查询方法->error:%v,用户id:%v", err, req.Id)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user_id":  req.Id,
+			"detail":   err,
+		}).Errorln("userDao.GetByOpts error.")
 		return nil, status.Error(codes.Internal, e.DbQueryError.Error())
 	}
-
 	if !user.CheckPwd(req.PwdOld) {
-		util.Logger.Errorf("用户修改密码方法->密码校验->false,用户名:%v", req.Id)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user_id":  req.Id,
+		}).Warningln("user CheckPwd error.")
 		return nil, status.Error(codes.InvalidArgument, e.ReqParamsError.Error())
 	}
 	var userNew = &model.User{
@@ -93,7 +128,11 @@ func (*UserService) ChangePwd(ctx context.Context, req *pb.ChangePwdReq) (*pb.Ch
 	userNew.Md5sumPwd(req.PwdNew)
 	userNew, err = userDao.ChangeByModel(userNew)
 	if err != nil {
-		util.Logger.Errorf("用户修改密码方法->用户修改方法->error:%v,用户model:%#v", err, userNew)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user":     userNew,
+			"detail":   err,
+		}).Errorln("user CheckPwd error.")
 		return nil, status.Error(codes.Internal, e.DbUpdateError.Error())
 	}
 	return &pb.ChangePwdRes{Res: true}, nil
@@ -104,10 +143,17 @@ func (*UserService) ShowInfo(ctx context.Context, req *pb.ShowInfoReq) (*pb.Show
 	user, err := userDao.GetByOpts(dao.WhereID(req.Id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			util.Logger.Errorf("用户信息展示方法->not found,用户id:%v", req.Id)
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"user_id":  req.Id,
+			}).Warningln("user GetByOpts not found.")
 			return nil, status.Error(codes.NotFound, e.DbQueryNotFound.Error())
 		}
-		util.Logger.Errorf("用户信息展示方法->error:%v,用户id:%v", err, req.Id)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user_id":  req.Id,
+			"detail":   err,
+		}).Errorln("user GetByOpts err.")
 		return nil, status.Error(codes.Internal, e.DbQueryError.Error())
 	}
 	return &pb.ShowInfoRes{
@@ -126,10 +172,17 @@ func (*UserService) ChangeAvatar(ctx context.Context, req *pb.ChangeAvatarReq) (
 	_, err := userDao.GetByOpts(dao.WhereID(req.Id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			util.Logger.Errorf("用户修改头像方法->查询->not found,用户id:%v", req.Id)
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"user_id":  req.Id,
+			}).Warningln("user GetByOpts not found.")
 			return nil, status.Error(codes.AlreadyExists, e.DbQueryNotFound.Error())
 		}
-		util.Logger.Errorf("用户修改头像方法->查询->error:%v,用户id:%v", err, req.Id)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user_id":  req.Id,
+			"detail":   err,
+		}).Errorln("user GetByOpts err.")
 		return nil, status.Error(codes.Internal, e.DbQueryError.Error())
 	}
 
@@ -139,13 +192,18 @@ func (*UserService) ChangeAvatar(ctx context.Context, req *pb.ChangeAvatarReq) (
 	}
 	userNew, err = userDao.ChangeByModel(userNew)
 	if err != nil {
-		util.Logger.Errorf("用户修改头像方法->修改->error:%v", err)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"user":     userNew,
+			"detail":   err,
+		}).Errorln("user ChangeByModel err.")
 		return nil, status.Error(codes.Internal, e.DbUpdateError.Error())
 	}
 	return &pb.ChangeAvatarRes{Res: true}, nil
 }
 
 func (*UserService) List(ctx context.Context, req *pb.ListReq) (*pb.ListRes, error) {
+	time.Sleep(time.Duration(conf.UserTimeoutMillisecond) * time.Millisecond)
 	db1 := db.NewDBClient(ctx).Model(&model.User{})
 	if req.Name != "" {
 		db1 = db1.Where("name like ?", fmt.Sprintf("%%%s%%", req.Name))
@@ -161,20 +219,30 @@ func (*UserService) List(ctx context.Context, req *pb.ListReq) (*pb.ListRes, err
 	err := db1.Count(&total).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			util.Logger.Debugf("user list total req:%#v, not found", req)
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"req":      req,
+			}).Infoln("user count not found.")
 			return &pb.ListRes{
 				Total: 0,
 				List:  nil,
 			}, nil
 		}
-		util.Logger.Errorf("user list total err:%v", err)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      req,
+			"detail":   err,
+		}).Errorln("user count error.")
 		return &pb.ListRes{
 			Total: 0,
 			List:  nil,
 		}, status.Error(codes.Internal, e.DbQueryError.Error())
 	}
-	util.Logger.Debugf("res:%#v, %v", res, res == nil)
 	if total == 0 {
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      req,
+		}).Infoln("user count not found.")
 		return &pb.ListRes{
 			Total: 0,
 			List:  nil,
@@ -188,13 +256,20 @@ func (*UserService) List(ctx context.Context, req *pb.ListReq) (*pb.ListRes, err
 	err = db1.Order(order).Offset(int(req.Offset)).Limit(int(req.Limit)).Find(&res).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			util.Logger.Debugf("user list req:%#v, not found", req)
+			util.Logger.WithFields(logrus.Fields{
+				"trace_id": ctx.Value(util.TraceIdKey),
+				"req":      req,
+			}).Infoln("user list not found.")
 			return &pb.ListRes{
 				Total: 0,
 				List:  nil,
 			}, nil
 		}
-		util.Logger.Errorf("user list err:%v", err)
+		util.Logger.WithFields(logrus.Fields{
+			"trace_id": ctx.Value(util.TraceIdKey),
+			"req":      req,
+			"detail":   err,
+		}).Errorln("user list error.")
 		return &pb.ListRes{
 			Total: uint64(total),
 			List:  nil,
