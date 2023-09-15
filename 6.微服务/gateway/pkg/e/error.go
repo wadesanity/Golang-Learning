@@ -34,3 +34,16 @@ var (
 	GrpcReqToManyError    = errors.New("grpc请求过多")
 	GrpcCircuitOpenError  = errors.New("grpc熔断开启")
 )
+
+type ApiError struct {
+	S          string
+	HttpStatus int
+}
+
+func (e *ApiError) Error() string {
+	return e.S
+}
+
+func NewApiError(httpStatus int, text string) error {
+	return &ApiError{text, httpStatus}
+}

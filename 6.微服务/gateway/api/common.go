@@ -27,7 +27,10 @@ func ConvertGrpcError2http(err error, c *gin.Context) {
 		errString = e.GrpcCircuitOpenError.Error()
 	} else {
 		util.Logger.Infof("not hystrix err:%v", err)
-		err = errors.Unwrap(err)
+		err1 := errors.Unwrap(err)
+		if err1 != nil {
+			err = err1
+		}
 		util.Logger.Infof("after unwrap err:%v", err)
 		s, ok := status.FromError(err)
 		if ok {
@@ -57,6 +60,9 @@ func ConvertGrpcError2http(err error, c *gin.Context) {
 				code = http.StatusInternalServerError
 				errString = e.UnknowError.Error()
 			}
+		} else {
+			code = http.StatusInternalServerError
+			errString = e.UnknowError.Error()
 		}
 	}
 

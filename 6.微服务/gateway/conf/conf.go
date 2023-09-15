@@ -30,7 +30,7 @@ var (
 	RpcAllTimeout                    int
 )
 
-func init() {
+func Init() {
 	abs, err := filepath.Abs("./conf/conf.ini")
 	if err != nil {
 		panic(fmt.Errorf("fail to get filepath: %w", err))

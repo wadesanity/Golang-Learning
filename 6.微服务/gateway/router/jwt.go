@@ -15,7 +15,7 @@ func jwtMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError))
+			c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError.Error()))
 			c.Abort()
 			return
 		}
@@ -34,7 +34,7 @@ func jwtMiddleware() gin.HandlerFunc {
 				util.Logger.WithFields(logrus.Fields{
 					"token": token,
 				}).Errorln("token myClaims parse get error.")
-				c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError))
+				c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError.Error()))
 				c.Abort()
 				return
 			}
@@ -60,7 +60,7 @@ func jwtMiddleware() gin.HandlerFunc {
 					"detail": err,
 				}).Errorln("tokenInvalid: Couldn't handle this token.")
 			}
-			c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError))
+			c.JSON(http.StatusUnauthorized, res.NewResError(http.StatusUnauthorized, e.AuthorizeError.Error()))
 			c.Abort()
 			return
 		}

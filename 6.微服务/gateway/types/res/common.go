@@ -33,10 +33,10 @@ func NewResList(dataList any, total int64, msg string) *Response {
 	}
 }
 
-func NewResError(status int, err error) *Response {
+func NewResError(status int, errString string) *Response {
 	return &Response{
 		Status: status,
-		Error:  err.Error(),
+		Error:  errString,
 	}
 }
 

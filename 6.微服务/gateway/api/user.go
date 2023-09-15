@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 	"gateway/grpc/conn"
 	pb "gateway/grpc/pb/user"
 	"gateway/pkg/e"
 	"gateway/pkg/util"
+	"gateway/service"
 	"gateway/types/req"
 	"gateway/types/res"
 	"github.com/gin-gonic/gin"
@@ -37,26 +39,27 @@ func UserRegister(c *gin.Context) {
 		util.Logger.WithFields(logrus.Fields{
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 			"detail":   err,
-		}).Errorln("rq bind return err")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		}).Error("rq shouldBind return err.")
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
-	util.Logger.Debugf("userRegisterReq:%v", rq)
-	in := &pb.RegisterReq{
-		Name:   rq.Name,
-		Pwd:    rq.Pwd,
-		Avatar: rq.Avatar,
-	}
-	util.Logger.Debugf("in:%v", in)
-	rs, err := conn.UserClient.Register(c.Request.Context(), in)
+	util.Logger.WithFields(logrus.Fields{
+		"trace_id": c.Request.Context().Value(util.TraceIdKey),
+		"rq":       rq,
+	}).Trace("userRegisterReq info.")
+	userS := service.GetUserService(conn.UserClient)
+	err = userS.Register(c.Request.Context(), &rq)
 	if err != nil {
 		util.Logger.WithFields(logrus.Fields{
-			"detail": err,
-		}).Errorln("grpc return err")
-		ConvertGrpcError2http(err, c)
+			"trace_id": c.Request.Context().Value(util.TraceIdKey),
+			"detail":   err,
+		}).Error("userService Register err.")
+		var apiError *e.ApiError
+		errors.As(err, &apiError)
+		c.JSON(apiError.HttpStatus, res.NewResError(apiError.HttpStatus, apiError.Error()))
 		return
 	}
-	c.JSON(http.StatusOK, res.NewResOk("注册用户成功", http.StatusOK, rs.Res))
+	c.JSON(http.StatusOK, res.NewResOk("注册用户成功", http.StatusOK, nil))
 }
 
 func UserLogin(c *gin.Context) {
@@ -66,8 +69,8 @@ func UserLogin(c *gin.Context) {
 		util.Logger.WithFields(logrus.Fields{
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 			"detail":   err,
-		}).Errorln("rq bind return err")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		}).Error("rq shouldBind return err.")
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
 	util.Logger.Debugln("userLoginReq:", rq)
@@ -95,7 +98,7 @@ func UserChangePwd(c *gin.Context) {
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 			"detail":   err,
 		}).Errorln("rq bind return err")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
 
@@ -124,7 +127,7 @@ func UserShowInfo(c *gin.Context) {
 		util.Logger.WithFields(logrus.Fields{
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 		}).Errorln("rq userID not exists")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
 	var in = &pb.ShowInfoReq{
@@ -159,7 +162,7 @@ func UserChangeAvatar(c *gin.Context) {
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 			"detail":   err,
 		}).Errorln("rq bind return err")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
 	var in = &pb.ChangeAvatarReq{
@@ -186,9 +189,10 @@ func UserList(c *gin.Context) {
 			"trace_id": c.Request.Context().Value(util.TraceIdKey),
 			"detail":   err,
 		}).Errorln("rq bind return err")
-		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError))
+		c.JSON(http.StatusBadRequest, res.NewResError(http.StatusBadRequest, e.ReqParamsError.Error()))
 		return
 	}
+
 	var in = &pb.ListReq{
 		Limit: uint32(rq.Limit),
 	}
@@ -213,11 +217,6 @@ func UserList(c *gin.Context) {
 		"in":       in,
 		"rq":       rq,
 	}).Debugln("rq and in info")
-	//ctx, cancel := context.WithCancel(c.Request.Context())
-	//go func() {
-	//	time.Sleep(200 * time.Millisecond)
-	//	cancel()
-	//}()
 	rs, err := conn.UserClient.List(c.Request.Context(), in)
 	if err != nil {
 		util.Logger.WithFields(logrus.Fields{

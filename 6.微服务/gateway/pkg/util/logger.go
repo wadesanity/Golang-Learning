@@ -7,7 +7,7 @@ import (
 
 var Logger *logrus.Logger
 
-func init() {
+func Init() {
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
 	Logger = logrus.New()
